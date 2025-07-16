@@ -9,7 +9,7 @@ q = 1
 N = 7
 
 
-df = pd.read_csv("C:\Project\Modeling\data.csv")
+df = pd.read_csv("data.csv")
 y = df['close'].astype(float)
 
 model = ARIMA(y, order=(p, d, q))
