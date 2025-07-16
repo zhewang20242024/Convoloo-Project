@@ -3,10 +3,10 @@ import matplotlib.pyplot as plt
 from statsmodels.tsa.arima.model import ARIMA
 
 
-p = int(input("Enter AR order (p): "))
-d = int(input("Enter differencing order (d): "))
-q = int(input("Enter MA order (q): "))
-N = int(input("Enter forecast steps (N): "))
+p = 1
+d = 2
+q = 1
+N = 7
 
 
 df = pd.read_csv("C:\Project\Modeling\data.csv")
