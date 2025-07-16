@@ -2,15 +2,15 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-lookback    = int(input("Enter look-back periods: "))
-lookforward = int(input("Enter look-forward periods: "))
-window_size = int(input("Enter analysis window size: "))
+lookback    = 2
+lookforward = 2
+window_size = 7
 
 
 swing_window = lookback + lookforward + 1
 
 
-df = pd.read_csv("C:\Project\Modeling\data.csv")
+df = pd.read_csv("data.csv")
 price = df['close']
 
 
@@ -19,7 +19,7 @@ plt.plot(price.index, price.values, label='Close Price', linewidth=1)
 
 
 cmap = plt.get_cmap('tab10')
-n_segments = (len(price) + window_size - 1) // window_size
+n_segments = (len(price) + window_size - 1) 
 
 for i in range(n_segments):
     start = i * window_size
@@ -33,7 +33,7 @@ for i in range(n_segments):
     roll_min = segment.rolling(swing_window, center=True).min()
     highs = segment.where(segment == roll_max).dropna()
     lows  = segment.where(segment == roll_min).dropna()
-
+    #identify swing highs
     if len(highs) >= 2:
         xh = highs.index.astype(float)
         yh = highs.values
@@ -49,7 +49,7 @@ for i in range(n_segments):
                 plt.plot(idx, upper,
                     linestyle='--',
                     color="red")
-
+    #identify swing lows
     if len(lows) >= 2:
         xl = lows.index.astype(float)
         yl = lows.values
