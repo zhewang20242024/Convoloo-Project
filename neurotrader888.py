@@ -4,14 +4,14 @@ import matplotlib.pyplot as plt
 from scipy.cluster.vq import kmeans2
 
 
-lookback    = int(input("Enter look-back periods: "))
-lookforward = int(input("Enter look-forward periods: "))
-k           = int(input("Enter number of clusters for S/R levels: "))
+lookback    = 1
+lookforward = 1
+k           = 1
 
 
 window = lookback + lookforward + 1
 
-df = pd.read_csv("C:\Project\Modeling\data.csv")
+df = pd.read_csv("data.csv")
 
 price = df['close']
 
