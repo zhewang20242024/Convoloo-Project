@@ -1,0 +1,150 @@
+\documentclass{article}
+\usepackage{amsmath, amssymb, graphicx, hyperref, geometry}
+\usepackage[numbers]{natbib}
+\title{Linear and Dynamic Programming Applications in Stock Portfolio Optimization}
+\author{Zhe Wang}
+\date{August 2025}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+Portfolio optimization seeks to allocate capital among assets to achieve objectives like maximizing expected return or minimizing risk. While the seminal Markowitz mean-variance framework employs quadratic programming \cite{markowitz1952}, many real-world risk measures and constraints yield linear or dynamic programming formulations. Linear programming enables efficient single-period optimization under piecewise-linear risk measures (e.g., CVaR) and linear constraints, whereas dynamic programming handles intertemporal decision-making under uncertainty by recursively solving Bellman equations \cite{bellman1957}. This report surveys key LP and DP approaches and provides comparative analysis.
+
+\section{Linear Programming Formulations}
+
+\subsection{CVaR Minimization}
+Conditional Value-at-Risk (CVaR) quantifies the expected loss in the worst $1-\alpha$ tail of the return distribution. Rockafellar and Uryasev \cite{rockafellar2000} demonstrated that CVaR minimization admits a linear programming formulation by introducing an auxiliary variable $\xi$ and scenario slacks $\zeta_s$ representing tail losses. The LP:
+\begin{align*}
+\min_{w,\xi,\zeta} ; & \xi + \frac{1}{(1-\alpha)S} \sum_{s=1}^S \zeta_s, \\
+\text{s.t.} ; & -w^T r_s - \xi \le \zeta_s, \quad \zeta_s \ge 0, ; s=1,\dots,S, \\
+& \sum_i w_i = 1, \quad w_i \ge 0.
+\end{align*}
+Here, $r_s$ are scenario returns and $w$ the weight vector. This formulation is piecewise-linear and solved in polynomial time using interior-point methods \cite{nemhauser1988}. Complexity grows with the number of scenarios $S$ and assets $n$, typically $O((n+S)^{3})$ in worst-case solver time \cite{wright1997}. CVaR LP is inherently single-period since it optimizes static weights over a fixed return distribution.
+
+\subsection{Sector and Transaction-Cost Constraints}
+Real-world portfolio rules—such as sector exposure limits or proportional transaction costs—can be encoded as linear constraints. For maximum sector weight $L_k$ in sector $k$:
+
+$$
+  \sum_{i\in \mathcal S_k} w_i \le L_k,
+$$
+
+and transaction costs $c_i$ per dollar traded introduce terms $c_i|\Delta w_i|$, linearized by splitting $\Delta w_i$ into positive and negative parts \cite{fabozzi2007}. These constraints preserve convexity and allow LP solvers like CPLEX to compute solutions efficiently \cite{cplex}. The tractability depends on the total number of constraints, but remains polynomial-time, with complexity $O(m^{2.5}n)$ where $m$ is constraint count and $n$ variable count \cite{chvatal1983}.
+
+\section{Dynamic Programming Approaches}
+
+\subsection{Multi-Period Rebalancing}
+Dynamic programming formulates portfolio rebalancing over multiple periods via Bellman recursion \cite{bellman1957}. Let $V_t(x)$ denote the maximal expected utility from period $t$ onward given wealth $x$. Under log-utility and discrete returns $R_{t+1}$:
+
+$$
+  V_t(x) = \max_{w_t}\; \mathbb{E}\bigl[\ln(w_t^T R_{t+1} x) + V_{t+1}(w_t^T R_{t+1} x)\bigr].
+$$
+
+Solving this requires discretizing wealth and weight spaces, leading to $O(T\times |X|\times |W|)$ complexity, where $T$ is number of periods, $|X|$ grid size, and $|W|$ action count. The curse of dimensionality arises as $|X|$ and $|W|$ grow exponentially with problem granularity \cite{powell2011}. Approximate dynamic programming or value-function approximation \cite{powell2011} mitigates this by projecting $V_t$ onto a lower-dimensional basis.
+
+\subsection{Stochastic Control and HJB Equations}
+In continuous time, dynamic programming yields Hamilton–Jacobi–Bellman (HJB) partial differential equations for the value function $V(t,x)$ \cite{merton1971,fleming2006}:
+
+$$
+  0 = V_t + \sup_{\pi} \Bigl\{ \mu\pi x V_x + \tfrac12\sigma^2\pi^2 x^2 V_{xx} \Bigr\},
+$$
+
+where $\pi$ is the fraction invested, and $\mu,\sigma$ the asset drift and volatility. Solving HJB PDEs via finite-difference or finite-element methods has complexity $O(n_x^3)$ per time step in $n_x$ state dimensions \cite{forsyth1999}. Analytical solutions exist under CRRA utility \cite{merton1971}, but more realistic models require high-dimensional numerical PDE solvers, limiting practical dimensionality to three or four state variables.
+
+\section{Comparative Analysis}
+Table contrasts key LP and DP characteristics:
+\begin{table}[h!]
+\centering
+\begin{tabular}{lcc}
+\hline
+Method & Scope & Complexity \\
+\hline
+CVaR LP & Single-period risk control & $O((n+S)^{3})$ \cite{wright1997} \\
+Sector LP & Constraint handling & $O(m^{2.5}n)$ \cite{chvatal1983} \\
+Multi-period DP & Intertemporal optimization & Exponential in $|X|,|W|$ \cite{bellman1957} \\
+Stochastic Control & Continuous-time models & $O(n_x^3)$ per step \cite{forsyth1999} \\
+\hline
+\end{tabular}
+\caption{Comparison of LP and DP Methods}
+\label{tab\:compare}
+\end{table}
+Linear programs like CVaR minimization optimize a static weight vector under fixed return scenarios, enabling polynomial-time solutions via interior-point algorithms \cite{nemhauser1988}. Sector constraint LPs scale similarly, with complexity determined by constraint count \cite{chvatal1983}. Dynamic programming’s multi-stage optimization requires discretizing state-action spaces, leading to an exponential growth in computation known as the curse of dimensionality \cite{bellman1957,powell2011}. Continuous-time stochastic control methods solve high-dimensional HJB PDEs, with computation cost scaling cubically in state dimensions and grid resolution \cite{forsyth1999}. These complexities guide method selection based on horizon length, risk preferences, and computational resources.
+
+\section{Implementation Considerations}
+Practitioners should ensure high-quality scenario generation for LP-based CVaR optimization and calibrate transaction-cost parameters. For DP, approximate methods such as basis function approximation, policy rollout, and actor-critic algorithms can reduce dimensionality \cite{powell2011}. Hybrid frameworks using LP at each DP stage or combining DP-derived insights with LP solvers show promise \cite{hu2012}.
+
+\section{Conclusion}
+Linear programming provides tractable single-period optimization with robust constraint handling, making it well-suited for static portfolio problems. Dynamic programming extends optimization across time horizons but incurs significant computational burdens due to state-action discretization and PDE solving. Selecting between LP and DP approaches depends on investment horizon, model complexity, and available computational power. Hybrid strategies that leverage the strengths of both paradigms can deliver flexible, high-performance portfolio solutions.
+
+\bibliographystyle{unsrt}
+\begin{thebibliography}{99}
+
+\bibitem{markowitz1952}
+H. Markowitz,
+\textit{Portfolio Selection},
+The Journal of Finance, 1952.
+
+\bibitem{bellman1957}
+R. Bellman,
+\textit{Dynamic Programming},
+Princeton University Press, 1957.
+
+\bibitem{rockafellar2000}
+R. T. Rockafellar and S. Uryasev,
+\textit{Optimization of Conditional Value-at-Risk},
+Journal of Risk, 2000.
+
+\bibitem{nemhauser1988}
+G. L. Nemhauser and L. A. Wolsey,
+\textit{Integer and Combinatorial Optimization},
+Wiley, 1988.
+
+\bibitem{wright1997}
+S. J. Wright,
+\textit{Primal-Dual Interior-Point Methods},
+SIAM, 1997.
+
+\bibitem{fabozzi2007}
+F. J. Fabozzi, P. N. Kolm, D. Pachamanova, and S. Focardi,
+\textit{Robust Portfolio Optimization and Management},
+Wiley, 2007.
+
+\bibitem{cplex}
+IBM,
+\textit{IBM ILOG CPLEX Optimizer},
+\url{[https://www.ibm.com/products/ilog-cplex-optimization-studio]}
+
+\bibitem{chvatal1983}
+V. Chvatal,
+\textit{Linear Programming},
+Freeman, 1983.
+
+\bibitem{powell2011}
+W. B. Powell,
+\textit{Approximate Dynamic Programming: Solving the Curses of Dimensionality},
+Wiley, 2011.
+
+\bibitem{merton1971}
+R. C. Merton,
+\textit{Optimum Consumption and Portfolio Rules in a Continuous-Time Model},
+Journal of Economic Theory, 1971.
+
+\bibitem{fleming2006}
+W. H. Fleming and H. M. Soner,
+\textit{Controlled Markov Processes and Viscosity Solutions},
+Springer, 2006.
+
+\bibitem{forsyth1999}
+P. A. Forsyth and K. R. Vetzal,
+\textit{Quadratic Convergence for Valuing American Options using a Penalty Method},
+SIAM Journal on Scientific Computing, 1999.
+
+\bibitem{hu2012}
+J. Hu and W. B. Powell,
+\textit{Hybrid Hidden Markov Model Approach for Portfolio Optimization},
+INFORMS Journal on Computing, 2012.
+
+\end{thebibliography}
+
+\end{document}
